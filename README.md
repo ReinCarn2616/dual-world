@@ -325,14 +325,14 @@ python tools/prep-assets.py bg keyvisual.png --out assets/bg/bg-light.png --worl
 
 这是一个**纯静态、零构建**的项目（ES Modules + 相对路径 + `.nojekyll`），可以直接由 GitHub Pages 托管。
 
-线上地址：<https://ReinCarn.github.io/dual-world/>
+线上地址：<https://ReinCarn2616.github.io/dual-world/>
 
 首次部署：
 
 1. 在 GitHub 上新建一个 **public** 仓库 `dual-world`（不要勾选 README / .gitignore / license）。
 2. 本地推送：
    ```bash
-   git remote add origin https://github.com/ReinCarn/dual-world.git
+   git remote add origin https://github.com/ReinCarn2616/dual-world.git
    git push -u origin main
    ```
    （推送时 Git Credential Manager 会弹出一次 GitHub 登录窗口，凭据只留在本机。）
