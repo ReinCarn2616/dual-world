@@ -319,3 +319,26 @@ python tools/prep-assets.py bg keyvisual.png --out assets/bg/bg-light.png --worl
 > `tools/lint-levels.mjs` 等）已从仓库中删除；它们当时跑出的结论（校验、单世界无解、
 > 三条解法磁带用时、结构审计数值、两条难度探针、三份盲测判决）都完整记录在本文中，
 > 需要复跑时按本文描述重新生成即可。
+---
+
+## 部署到 GitHub Pages
+
+这是一个**纯静态、零构建**的项目（ES Modules + 相对路径 + `.nojekyll`），可以直接由 GitHub Pages 托管。
+
+线上地址：<https://ReinCarn.github.io/dual-world/>
+
+首次部署：
+
+1. 在 GitHub 上新建一个 **public** 仓库 `dual-world`（不要勾选 README / .gitignore / license）。
+2. 本地推送：
+   ```bash
+   git remote add origin https://github.com/ReinCarn/dual-world.git
+   git push -u origin main
+   ```
+   （推送时 Git Credential Manager 会弹出一次 GitHub 登录窗口，凭据只留在本机。）
+3. 仓库页 → Settings → Pages → Source 选 **Deploy from a branch** → Branch 选 `main`、目录选 `/ (root)` → Save。
+4. 等 1 分钟左右访问上面的线上地址。
+
+以后更新只需 `git add -A && git commit -m "..." && git push`，Pages 会自动重建。
+
+> 注意：仓库保持在 **public** —— 免费账号只有公开仓库才能启用 Pages。
