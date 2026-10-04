@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>光影之间 · 双世界解谜平台跳跃</title>
+<!-- 全静态、零依赖、无构建步骤（§10.1）：直接打开 index.html 即可，部署到 GitHub Pages 无需任何配置 -->
+<style>
+  :root {
+    --c-bg: #F4EFE2;
+    --c-brick: #2B2B33;
+    --c-player: #E4572E;
+    --c-hazard: #C1292E;
+    --c-exit: #3D9970;
+    --ghost: #7A7A7A;
+    --page: #101219;
+    --hud-h: clamp(32px, 5vh, 48px);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--page);
+    color: #E8E8EE;
+    font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    overflow: hidden;
+  }
+  #app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+  /* HUD：普通 DOM 元素，与 canvas 是兄弟节点，物理上不可能重叠（§8.3） */
+  .hud {
+    flex: 0 0 auto;
+    width: 100%;
+    height: var(--hud-h);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 clamp(10px, 2vw, 22px);
+    background: var(--c-bg);
+    color: var(--c-brick);
+    font-size: clamp(12px, calc(var(--hud-h) * 0.36), 17px);
+    transition: background-color 60ms linear, color 60ms linear;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+  }
+  .hud .spacer { flex: 1 1 auto; }
+  .hud .mid { flex: 0 1 auto; min-width: 0; opacity: 0.85; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hud .time { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .hud .level { flex: 0 0 auto; font-weight: 600; white-space: nowrap; }
+
+  #stage {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
+    padding: 8px;
+  }
+  canvas#game {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #000;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.08), 0 10px 40px rgba(0,0,0,0.6);
+  }
+
+  /* 覆盖层：标题 / 暂停 / 按键设置 / 结算 —— 文字一律走 DOM，canvas 里不画任何文字（§12.5 E1） */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background: rgba(8, 9, 14, 0.72);
+    overflow: auto;
+    backdrop-filter: blur(2px);
+  }
+  .overlay.hidden { display: none; }
+  .panel {
+    width: min(680px, 100%);
+    max-height: 100%;
+    overflow: auto;
+    background: rgba(20, 22, 31, 0.96);
+    border: 2px solid var(--c-brick);
+    border-radius: 10px;
+    padding: clamp(12px, 2.4vh, 24px) clamp(14px, 2.6vw, 28px);
+    box-shadow: 0 16px 60px rgba(0,0,0,0.7);
+    font-size: clamp(12px, 1.5vh + 0.35vw, 17px);
+    line-height: 1.55;
+  }
+  .panel h1 { margin: 0 0 4px; font-size: 1.9em; letter-spacing: 0.12em; color: var(--c-player); }
+  .panel h2 { margin: 0 0 10px; font-size: 1.25em; }
+  kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 1px 6px;
+    margin: 0 1px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-bottom-width: 2px;
+    background: rgba(255,255,255,0.1);
+    font-family: inherit;
+    font-size: 0.95em;
+    text-align: center;
+  }
+
+  /* ---------- 主菜单：标题 / 页签 / 分区 ---------- */
+  .menu { width: min(860px, 100%); }
+  .menu-head { text-align: center; }
+  .menu-head h1 { font-size: 2.3em; letter-spacing: 0.2em; margin: 0; color: var(--c-player); }
+  .menu-head h2 { margin: 0; font-size: 1.45em; }
+  .menu-head .tagline { margin: 6px 0 0; opacity: 0.68; font-size: 0.95em; }
+  .tabs {
+    display: flex; flex-wrap: wrap; gap: 4px;
+    margin: 16px 0 0;
+    border-bottom: 1px solid rgba(255,255,255,0.14);
+  }
+  .tab {
+    font: inherit; color: inherit; cursor: pointer;
+    background: none; border: none; border-bottom: 3px solid transparent;
+    padding: 8px 16px; opacity: 0.6; border-radius: 8px 8px 0 0;
+  }
+  .tab:hover { opacity: 0.95; background: rgba(255,255,255,0.06); }
+  .tab.active { opacity: 1; font-weight: 700; border-bottom-color: var(--c-player); }
+  .tab-panel { padding: 16px 2px 2px; }
+  .section { margin-bottom: 18px; }
+  .section:last-child { margin-bottom: 4px; }
+  .section > h3 {
+    margin: 0 0 8px; font-size: 0.86em; font-weight: 600;
+    letter-spacing: 0.12em; opacity: 0.62;
+  }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .btn {
+    font: inherit; color: inherit; cursor: pointer;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 7px; padding: 7px 13px;
+  }
+  .btn:hover { background: rgba(255,255,255,0.16); }
+  .btn:focus-visible, .tab:focus-visible, .level-card:focus-visible, .slot:focus-visible {
+    outline: 2px solid rgba(255,255,255,0.45); outline-offset: 2px;
+  }
+  .btn.primary { background: var(--c-exit); color: #0d0f14; border-color: transparent; font-weight: 700; }
+  .btn.big { padding: 9px 20px; font-size: 1.05em; }
+  .btn.danger { border-color: #7a2a2a; color: #ffb4ae; }
+  .level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .level-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    font: inherit; color: inherit; text-align: left; cursor: pointer;
+    padding: 10px 12px; border-radius: 9px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .level-card:hover { background: rgba(255,255,255,0.13); border-color: var(--c-player); }
+  .level-card.clear { border-color: rgba(61,153,112,0.65); }
+  .level-card .no { font-size: 0.76em; opacity: 0.55; }
+  .level-card .nm { font-weight: 700; font-size: 1.06em; }
+  .level-card .bs { font-size: 0.8em; opacity: 0.7; font-variant-numeric: tabular-nums; }
+  .level-card .bs.dim { opacity: 0.42; }
+  .placeholder {
+    margin: 0;
+    padding: 14px 16px;
+    border: 1px dashed rgba(255,255,255,0.18);
+    border-radius: 9px;
+    opacity: 0.5;
+    font-size: 0.88em;
+  }
+  .kv-rows { display: flex; flex-direction: column; }
+  .kv-rows.compact .kv-row { padding: 4px 0; }
+  .kv-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 7px 0; border-bottom: 1px dashed rgba(255,255,255,0.09);
+  }
+  .kv-row:last-child { border-bottom: none; }
+  .kv-row .lab { opacity: 0.82; }
+  .kv-row .keys { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .mono, .big { font-variant-numeric: tabular-nums; }
+  .big { font-size: 2.1em; font-weight: 700; letter-spacing: 0.04em; }
+  .record { color: var(--c-exit); font-weight: 700; margin-left: 8px; }
+  .delta { opacity: 0.7; margin-left: 8px; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; background: rgba(255,255,255,0.12); font-size: 0.85em; }
+  .badge.ok { background: rgba(61,153,112,0.3); }
+  .footnote { margin: 8px 0 0; font-size: 0.86em; opacity: 0.62; line-height: 1.6; }
+  .menu-foot {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;
+    margin-top: 16px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 0.8em; opacity: 0.5;
+  }
+  .slot {
+    font: inherit; color: inherit; cursor: pointer;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 6px; padding: 5px 10px; min-width: 4.5em;
+  }
+  .slot:hover { background: rgba(255,255,255,0.16); }
+  .slot.waiting { background: var(--c-player); color: #10121a; font-weight: 700; }
+  .msg { margin: 10px 0 0; min-height: 1.4em; color: #ffd479; }
+  #foot {
+    flex: 0 0 auto;
+    width: 100%;
+    min-height: 1.2em;
+    padding: 2px 12px 6px;
+    font-size: 12px;
+    opacity: 0.55;
+    text-align: center;
+  }
+  @media (max-width: 640px) {
+    .menu-head h1 { font-size: 1.6em; letter-spacing: 0.12em; }
+    .tab { padding: 7px 10px; }
+    .level-grid { grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <header class="hud world-light" id="hud">
+      <span class="level" id="hud-level">第 1 关 / 8</span>
+      <span class="spacer"></span>
+      <span class="mid" id="hud-hint"></span>
+      <span class="spacer"></span>
+      <span class="time" id="hud-time">本关 00:00.00</span>
+    </header>
+
+    <main id="stage">
+      <canvas id="game" width="640" height="384" aria-label="游戏画面"></canvas>
+      <div id="overlay" class="overlay hidden"><div class="panel" id="panel"></div></div>
+    </main>
+
+    <footer id="foot"><span id="foot-dev"></span></footer>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+  <noscript>本游戏需要启用 JavaScript。</noscript>
+</body>
+</html>

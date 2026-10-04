@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "tileSize": 32,
+  "note": "所有帧偏移、动画帧序、播放速率一律从本文件读取，渲染代码里不得出现硬编码的像素数字（§7.6.2）。frameW / frameH 与实际图片尺寸不符时按加载失败处理，走 procedural.js 降级（§7.6.1）。",
+  "sheets": {
+    "player.light": {
+      "src": "player/player-light.png",
+      "frameW": 32,
+      "frameH": 64,
+      "frames": 20,
+      "footOffset": 2,
+      "anims": { "idle": [0, 1, 2, 3], "run": [4, 5, 6, 7, 8, 9], "jump": [10, 11], "fall": [12, 13], "land": [14, 15], "die": [16, 17, 18, 19] }
+    },
+    "player.dark": {
+      "src": "player/player-dark.png",
+      "frameW": 32,
+      "frameH": 64,
+      "frames": 20,
+      "footOffset": 2,
+      "anims": { "idle": [0, 1, 2, 3], "run": [4, 5, 6, 7, 8, 9], "jump": [10, 11], "fall": [12, 13], "land": [14, 15], "die": [16, 17, 18, 19] }
+    },
+    "tiles.light": { "src": "tiles/tileset-light.png", "frameW": 32, "frameH": 32, "frames": 18 },
+    "tiles.dark": { "src": "tiles/tileset-dark.png", "frameW": 32, "frameH": 32, "frames": 18 },
+    "hazard.light": { "src": "hazard/lava-light.png", "frameW": 32, "frameH": 32, "frames": 4, "fps": 8 },
+    "hazard.dark": { "src": "hazard/lava-dark.png", "frameW": 32, "frameH": 32, "frames": 4, "fps": 8 },
+    "exit.light": { "src": "ui/exit-light.png", "frameW": 32, "frameH": 32, "frames": 4, "fps": 6 },
+    "exit.dark": { "src": "ui/exit-dark.png", "frameW": 32, "frameH": 32, "frames": 4, "fps": 6 },
+    "bg.light": { "src": "bg/bg-light.png", "frameW": 960, "frameH": 576, "frames": 1, "parallax": 0.5 },
+    "bg.dark": { "src": "bg/bg-dark.png", "frameW": 960, "frameH": 576, "frames": 1, "parallax": 0.5 }
+  }
+}

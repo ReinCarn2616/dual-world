@@ -1,0 +1,15 @@
+# 操作系统杂项
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# 编辑器
+.vscode/
+.idea/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 本地日志
+*.log
